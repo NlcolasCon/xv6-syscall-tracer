@@ -1,0 +1,25 @@
+name: xv6 Tracer CI
+
+on: [push, pull_request]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up QEMU
+        run: sudo apt-get update && sudo apt-get install -y qemu-system-i386
+      - name: Apply dif patches
+        run: rsync -av --relative dif/ xv6/
+      - name: Build xv6
+        run: |
+          pushd xv6
+          make clean
+          make
+          popd
+      - name: Smoke-test in QEMU
+        run: |
+          pushd xv6
+          timeout 30s make qemu-nox \
+            QEMUEXTRA="-nographic -serial mon:stdio" </dev/null
+          popd
